@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package twopc;
+
+service VotingPhase {
+  rpc RequestVote (VoteRequest) returns (VoteResponse);
+}
+
+message VoteRequest {
+  string vote_request = 1;
+}
+
+message VoteResponse {
+  bool vote_commit = 1; // true for commit, false for abort
+}
