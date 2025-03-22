@@ -13,7 +13,7 @@ def run():
         sys.exit(1)
     
     participants = sys.argv[1:]
-    
+    vote_results = []
     # Iterate over each participant address and send a vote request
     for participant in participants:
         participant_address = 'localhost:' + participant 
@@ -30,11 +30,36 @@ def run():
                 
                 # Log the response received from the participant
                 print(f"Phase Voting_Phase of Node1 (Coordinator) received response from Phase Voting_Phase of Partcipant Node {participant}: Vote Commit = {response.vote_commit}")
+                vote_results.append(response.vote_commit)
         except grpc.RpcError:
                 response = False
                 
                 # Log the response received from the participant
                 print(f"Phase Voting_Phase of Node1 (Coordinator) received response from Phase Voting_Phase of Partcipant Node {participant}: Vote Commit = False")
+                vote_results.append(False)
+                
+    global_commit = all(vote_results)
+    print("Global decision computed:", "commit" if global_commit else "abort")
+    
+    
+    # Handoff phase: invoke the Java DecisionCoordinator's RPC.
+    # Assume the DecisionCoordinator service is running on localhost at port 60060 (for example).
+    decision_coordinator_address = 'localhost:60060'
+    decision_participant_addresses = ["localhost:" + str(int(p) + 10000) for p in participants]
+    with grpc.insecure_channel(decision_coordinator_address) as channel:
+        stub = twopc_pb2_grpc.DecisionCoordinatorServiceStub(channel)
+        
+        # Create a DecisionHandoffRequest message.]
+        handoff_request = twopc_pb2.DecisionHandoffRequest(
+            global_commit=global_commit,
+            participant_addresses=decision_participant_addresses  # List of participant addresses (e.g., ["60051", "60052"])
+        )
+        
+        print("Invoking DecisionCoordinatorService.startDecisionPhase with global decision and participant addresses:", handoff_request)
+        handoff_response = stub.startDecisionPhase(handoff_request)
+        print("Received response from DecisionCoordinatorService:", handoff_response.message)
+    
+    
 
 if __name__ == '__main__':
     run()

@@ -24,17 +24,30 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0btwopc.proto\x12\x05twopc\"#\n\x0bVoteRequest\x12\x14\n\x0cvote_request\x18\x01 \x01(\t\"#\n\x0cVoteResponse\x12\x13\n\x0bvote_commit\x18\x01 \x01(\x08\x32\x45\n\x0bVotingPhase\x12\x36\n\x0bRequestVote\x12\x12.twopc.VoteRequest\x1a\x13.twopc.VoteResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0btwopc.proto\x12\x05twopc\"#\n\x0bVoteRequest\x12\x14\n\x0cvote_request\x18\x01 \x01(\t\"#\n\x0cVoteResponse\x12\x13\n\x0bvote_commit\x18\x01 \x01(\x08\"(\n\x0f\x44\x65\x63isionRequest\x12\x15\n\rglobal_commit\x18\x01 \x01(\x08\"\x1f\n\x10\x44\x65\x63isionResponse\x12\x0b\n\x03\x61\x63k\x18\x01 \x01(\t\"N\n\x16\x44\x65\x63isionHandoffRequest\x12\x15\n\rglobal_commit\x18\x01 \x01(\x08\x12\x1d\n\x15participant_addresses\x18\x02 \x03(\t\"*\n\x17\x44\x65\x63isionHandoffResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2E\n\x0bVotingPhase\x12\x36\n\x0bRequestVote\x12\x12.twopc.VoteRequest\x1a\x13.twopc.VoteResponse2R\n\rDecisionPhase\x12\x41\n\x0eGlobalDecision\x12\x16.twopc.DecisionRequest\x1a\x17.twopc.DecisionResponse2q\n\x1a\x44\x65\x63isionCoordinatorService\x12S\n\x12startDecisionPhase\x12\x1d.twopc.DecisionHandoffRequest\x1a\x1e.twopc.DecisionHandoffResponseB\x02P\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'twopc_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
-  DESCRIPTOR._loaded_options = None
+  _globals['DESCRIPTOR']._loaded_options = None
+  _globals['DESCRIPTOR']._serialized_options = b'P\001'
   _globals['_VOTEREQUEST']._serialized_start=22
   _globals['_VOTEREQUEST']._serialized_end=57
   _globals['_VOTERESPONSE']._serialized_start=59
   _globals['_VOTERESPONSE']._serialized_end=94
-  _globals['_VOTINGPHASE']._serialized_start=96
-  _globals['_VOTINGPHASE']._serialized_end=165
+  _globals['_DECISIONREQUEST']._serialized_start=96
+  _globals['_DECISIONREQUEST']._serialized_end=136
+  _globals['_DECISIONRESPONSE']._serialized_start=138
+  _globals['_DECISIONRESPONSE']._serialized_end=169
+  _globals['_DECISIONHANDOFFREQUEST']._serialized_start=171
+  _globals['_DECISIONHANDOFFREQUEST']._serialized_end=249
+  _globals['_DECISIONHANDOFFRESPONSE']._serialized_start=251
+  _globals['_DECISIONHANDOFFRESPONSE']._serialized_end=293
+  _globals['_VOTINGPHASE']._serialized_start=295
+  _globals['_VOTINGPHASE']._serialized_end=364
+  _globals['_DECISIONPHASE']._serialized_start=366
+  _globals['_DECISIONPHASE']._serialized_end=448
+  _globals['_DECISIONCOORDINATORSERVICE']._serialized_start=450
+  _globals['_DECISIONCOORDINATORSERVICE']._serialized_end=563
 # @@protoc_insertion_point(module_scope)

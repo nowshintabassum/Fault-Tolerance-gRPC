@@ -1,2 +1,8 @@
 Create backbone code from .proto file in python:
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. vote.proto
+python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. twopc.proto
+
+
+./gradlew runCoordinator --args='60060'
+./gradlew runParticipant --args='60051'
+python participant.py 50051
+python coordinator.py 50051 50052

@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+    id 'com.google.protobuf' version '0.8.18'
+    id 'application'
+}
+
+group 'com.example'
+version '1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.grpc:grpc-netty-shaded:1.45.1'
+    implementation 'io.grpc:grpc-protobuf:1.45.1'
+    implementation 'io.grpc:grpc-stub:1.45.1'
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+    testImplementation 'junit:junit:4.12'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.19.1"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.45.1"
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        // Include BOTH the normal Java src directory and the generated proto directories
+        java {
+            srcDirs = [
+                    'src/main/java',
+                    'build/generated/source/proto/main/java',
+                    'build/generated/source/proto/main/grpc'
+            ]
+        }
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('generateProto')
+}
+
+// (Optional) custom tasks to run coordinator/participant
+task runCoordinator(type: JavaExec) {
+    group = "application"
+    description = "Runs the Decision Coordinator"
+    mainClass.set("twopc.DecisionCoordinator")
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task runParticipant(type: JavaExec) {
+    group = "application"
+    description = "Runs the Decision Participant"
+    mainClass.set("twopc.DecisionParticipant")
+    classpath = sourceSets.main.runtimeClasspath
+}
