@@ -16,7 +16,8 @@ def run():
     vote_results = []
     # Iterate over each participant address and send a vote request
     for participant in participants:
-        participant_address = 'localhost:' + participant 
+        # participant_address = 'localhost:' + participant 
+        participant_address = participant
         try: 
             with grpc.insecure_channel(participant_address) as channel:
                 stub = twopc_pb2_grpc.VotingPhaseStub(channel)
@@ -44,8 +45,19 @@ def run():
     
     # Handoff phase: invoke the Java DecisionCoordinator's RPC.
     # Assume the DecisionCoordinator service is running on localhost at port 60060 (for example).
-    decision_coordinator_address = 'localhost:60060'
-    decision_participant_addresses = ["localhost:" + str(int(p) + 10000) for p in participants]
+    # decision_coordinator_address = 'localhost:60060'
+    # decision_participant_addresses = ["localhost:" + str(int(p) + 10000) for p in participants]
+    
+    # Compute the participant addresses for the decision phase.
+    # For each argument in the form "host:port", add 10000 to the port.
+    decision_participant_addresses = []
+    for p in participants:
+        host, port_str = p.split(":")
+        decision_port = int(port_str) + 10000
+        decision_participant_addresses.append(f"{host}:{decision_port}")
+    
+    decision_coordinator_address = 'coordinator:60060'
+    
     with grpc.insecure_channel(decision_coordinator_address) as channel:
         stub = twopc_pb2_grpc.DecisionCoordinatorServiceStub(channel)
         
