@@ -30,17 +30,17 @@ def run():
                 response = stub.RequestVote(vote_request)
                 
                 # Log the response received from the participant
-                print(f"Phase Voting_Phase of Node1 (Coordinator) received response from Phase Voting_Phase of Partcipant Node {participant}: Vote Commit = {response.vote_commit}")
+                print(f"Phase Voting_Phase of Node1 (Coordinator) received response {response.vote_commit} from Phase Voting_Phase of Partcipant Node {participant}")
                 vote_results.append(response.vote_commit)
         except grpc.RpcError:
                 response = False
                 
                 # Log the response received from the participant
-                print(f"Phase Voting_Phase of Node1 (Coordinator) received response from Phase Voting_Phase of Partcipant Node {participant}: Vote Commit = False")
+                print(f"Phase Voting_Phase of Node1 (Coordinator) received response {response.vote_commit} from Phase Voting_Phase of Partcipant Node {participant}")
                 vote_results.append(False)
                 
     global_commit = all(vote_results)
-    print("Global decision computed:", "commit" if global_commit else "abort")
+    # print("Global decision computed:", "commit" if global_commit else "abort")
     
     
     # Handoff phase: invoke the Java DecisionCoordinator's RPC.
@@ -66,10 +66,10 @@ def run():
             global_commit=global_commit,
             participant_addresses=decision_participant_addresses  # List of participant addresses (e.g., ["60051", "60052"])
         )
-        
-        print("Invoking DecisionCoordinatorService.startDecisionPhase with global decision and participant addresses:", handoff_request)
+        print("Phase Decision phase of Node1 (Coordinator) sends RPC Global Decision to own(Coordinator) Java service ")
+        # print("Invoking DecisionCoordinatorService.startDecisionPhase with global decision and participant addresses:", handoff_request)
         handoff_response = stub.startDecisionPhase(handoff_request)
-        print("Received response from DecisionCoordinatorService:", handoff_response.message)
+        # print("Received response from DecisionCoordinatorService:", handoff_response.message)
     
     
 
