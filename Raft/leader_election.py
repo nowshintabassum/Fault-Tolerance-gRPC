@@ -34,9 +34,7 @@ class RaftServicer(raft_pb2_grpc.RaftServicer):
         if request.term > CURRENT_TERM:
             CURRENT_TERM = request.term
             VOTED_FOR = None
-            STATE = "follower"
-            # VOTED_FOR = request.candidateId
-            # vote_granted = True
+        
 
         vote_granted = False
         if request.term == CURRENT_TERM and (VOTED_FOR is None or VOTED_FOR == request.candidateId):
@@ -56,6 +54,7 @@ class RaftServicer(raft_pb2_grpc.RaftServicer):
             LAST_HEARTBEAT = time.time()
             return raft_pb2.AppendEntriesResponse(term=CURRENT_TERM, success=True)
         else:
+            print('Intiating leader election again')
             return raft_pb2.AppendEntriesResponse(term=CURRENT_TERM, success=False)
 
 def send_request_vote(NODE_ID):
@@ -76,7 +75,7 @@ def send_request_vote(NODE_ID):
         except grpc.RpcError as e:
             continue
     print(f"Recieved {VOTES_RECEIVED} votes")
-    time.sleep(5)
+    # time.sleep(5) /
 
 def send_heartbeats(NODE_ID):
     for node in MEMBER_NODES:
@@ -106,8 +105,8 @@ def run_election(NODE_ID):
             send_heartbeats(NODE_ID)
             time.sleep(HEARTBEAT_INTERVAL)
     else:
-            STATE = "follower"
-            print(f"Node {NODE_ID} failed to become leader, reverting to follower")
+        STATE = "follower"
+        print(f"Node {NODE_ID} failed to become leader, reverting to follower")
 
 
 
