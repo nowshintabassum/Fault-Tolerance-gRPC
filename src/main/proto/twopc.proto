@@ -31,7 +31,7 @@ message DecisionResponse {
   string ack = 1;
 }
 
-// New service for the decision coordinator.
+// Service for the decision coordinator.
 service DecisionCoordinatorService {
   // This RPC is invoked by the Python coordinator to hand off the decision.
   rpc startDecisionPhase (DecisionHandoffRequest) returns (DecisionHandoffResponse);

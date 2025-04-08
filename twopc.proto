@@ -4,7 +4,7 @@ option java_multiple_files = true;
 
 package twopc;
 
-// Existing definitions for VotingPhase, DecisionPhase, etc.
+
 
 service VotingPhase {
   rpc RequestVote (VoteRequest) returns (VoteResponse);
@@ -18,7 +18,7 @@ message VoteResponse {
   bool vote_commit = 1;
 }
 
-// Service for decision phase at the participant level.
+
 service DecisionPhase {
   rpc GlobalDecision (DecisionRequest) returns (DecisionResponse);
 }
@@ -31,7 +31,7 @@ message DecisionResponse {
   string ack = 1;
 }
 
-// New service for the decision coordinator.
+
 service DecisionCoordinatorService {
   // This RPC is invoked by the Python coordinator to hand off the decision.
   rpc startDecisionPhase (DecisionHandoffRequest) returns (DecisionHandoffResponse);

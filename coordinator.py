@@ -22,21 +22,21 @@ def run():
             with grpc.insecure_channel(participant_address) as channel:
                 stub = twopc_pb2_grpc.VotingPhaseStub(channel)
                 
-                # Coordinator log message before sending the vote request
+                
                 print(f"Phase Voting_Phase of Node1 (Coordinator) requests RPC RequestVote to Phase Voting_Phase of Participant Node {participant}")
                 
-                # Create and send a vote request (change "commit" to "abort" to simulate an abort)
+                # Create and send a vote request 
                 vote_request = twopc_pb2.VoteRequest(vote_request="request")
                 response = stub.RequestVote(vote_request)
                 
-                # Log the response received from the participant
+                
                 print(f"Phase Voting_Phase of Node1 (Coordinator) received response {response.vote_commit} from Phase Voting_Phase of Partcipant Node {participant}")
                 vote_results.append(response.vote_commit)
         except grpc.RpcError:
                 response = False
                 
-                # Log the response received from the participant
-                print(f"Phase Voting_Phase of Node1 (Coordinator) received response {response.vote_commit} from Phase Voting_Phase of Partcipant Node {participant}")
+                
+                print(f"Phase Voting_Phase of Node1 (Coordinator) received response {response} from Phase Voting_Phase of Partcipant Node {participant}")
                 vote_results.append(False)
                 
     global_commit = all(vote_results)
@@ -48,8 +48,8 @@ def run():
     # decision_coordinator_address = 'localhost:60060'
     # decision_participant_addresses = ["localhost:" + str(int(p) + 10000) for p in participants]
     
-    # Compute the participant addresses for the decision phase.
-    # For each argument in the form "host:port", add 10000 to the port.
+    # Computing the participant addresses for the decision phase.
+    
     decision_participant_addresses = []
     for p in participants:
         host, port_str = p.split(":")
@@ -61,7 +61,7 @@ def run():
     with grpc.insecure_channel(decision_coordinator_address) as channel:
         stub = twopc_pb2_grpc.DecisionCoordinatorServiceStub(channel)
         
-        # Create a DecisionHandoffRequest message.]
+        # Create a DecisionHandoffRequest message.
         handoff_request = twopc_pb2.DecisionHandoffRequest(
             global_commit=global_commit,
             participant_addresses=decision_participant_addresses  # List of participant addresses (e.g., ["60051", "60052"])

@@ -20,15 +20,14 @@ class VotingPhaseServicer(twopc_pb2_grpc.VotingPhaseServicer):
         # Participant log message
         print(f"Phase Voting_Phase of Node {self.node_address} recieves RPC RequestVote from Phase Voting_Phase of Node Coordinator")
         
-        # Here you decide whether to commit or abort.
-        # For example, commit if the vote_request message is "commit", else abort.
+        #if participant up and running, sends True to vote request
         vote_commit = True
         
         return twopc_pb2.VoteResponse(vote_commit=vote_commit)
 
 def serve(address):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    twopc_pb2_grpc.add_VotingPhaseServicer_to_server(VotingPhaseServicer(node_address = node_address), server)
+    twopc_pb2_grpc.add_VotingPhaseServicer_to_server(VotingPhaseServicer(node_address = address), server)
     node_address = '[::]:'+address
     server.add_insecure_port(node_address)
     server.start()

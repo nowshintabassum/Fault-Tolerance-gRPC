@@ -20,10 +20,10 @@ public class DecisionCoordinator extends DecisionCoordinatorServiceGrpc.Decision
         List<String> participants = request.getParticipantAddressesList();
 
         System.out.println("Phase " + PHASE_NAME + " of Node " + NODE_ID +
-                " received global decision: " + (globalCommit ? "commit" : "abort"));
+                " received RPC Global Decision from its own Voting Phase: " + (globalCommit ? "commit" : "abort"));
         System.out.println("Disseminating decision to participants: " + participants);
 
-        // For each participant, create a channel and send the global decision.
+        // For each participant, creating a channel and send the global decision.
         for (String participant : participants) {
                 try {
                 ManagedChannel channel = ManagedChannelBuilder.forTarget(participant)
@@ -40,7 +40,7 @@ public class DecisionCoordinator extends DecisionCoordinatorServiceGrpc.Decision
                 System.out.println("Received ack from Participant " + participant + ": " + decisionResponse.getAck());
                 channel.shutdown();
                 } catch (Exception e) {
-                // On error, just continue without printing any messages.
+                // On error, continue without printing any messages.
                 continue;
                 }
         }
@@ -54,13 +54,13 @@ public class DecisionCoordinator extends DecisionCoordinatorServiceGrpc.Decision
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // Check for a command-line argument for the port number.
+        
         if (args.length != 1) {
             System.out.println("Usage: java twopc.DecisionCoordinator <port>");
             System.exit(1);
         }
         int port = Integer.parseInt(args[0]);
-        NODE_ID = port;  // Use the port as the NODE_ID
+        NODE_ID = port;  
 
         // Start the gRPC server on the specified port.
         Server server = ServerBuilder.forPort(port)
