@@ -12,6 +12,8 @@ service Raft {
   rpc AppendEntries(AppendEntriesRequest) returns (AppendEntriesResponse);
   // RPC used by clients to submit an operation/command
   rpc SubmitOperation(OperationRequest) returns (OperationResponse);
+
+  rpc HandoffLeader (ChangedLeader) returns (ChangedLeaderAck)
 }
 
 message VoteRequest {
@@ -50,4 +52,12 @@ message OperationRequest {
 
 message OperationResponse {
   string result = 1;
+}
+
+message ChangedLeader {
+  string newleader = 1;
+}
+
+message ChangedLeaderAck{
+  bool ack = 1;
 }
