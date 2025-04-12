@@ -14,7 +14,7 @@ STATE = "follower"
 CURRENT_TERM = 0
 VOTES_RECEIVED = 0
 VOTED_FOR = None
-MEMBER_NODES = ['50051', '50052', "50053"]
+MEMBER_NODES = ['50051', '50052', '50053','50054','50055']
 # , "50054", "50055"]
 LAST_HEARTBEAT = time.time()
 
@@ -101,6 +101,7 @@ def run_election(NODE_ID):
     if VOTES_RECEIVED > len(MEMBER_NODES) // 2:
         STATE = "leader"
         print(f"Node {NODE_ID} becomes leader for term {CURRENT_TERM}")
+        handoff_leader(NODE_ID)
         while STATE == "leader":
             send_heartbeats(NODE_ID)
             time.sleep(HEARTBEAT_INTERVAL)
@@ -121,6 +122,19 @@ def election_timer(NODE_ID):
         if time.time() - LAST_HEARTBEAT >= ELECTION_TIMEOUT:
             run_election(NODE_ID)
             ELECTION_TIMEOUT = random.uniform(1.5, 3.0)
+
+def handoff_leader(new_leader_id):
+    try:
+        java_server_port = int(new_leader_id) + 10000
+        java_server_address = f"localhost:{java_server_port}"
+        channel = grpc.insecure_channel(java_server_address)
+        stub = raft_pb2_grpc.RaftServiceStub(channel)
+        request = raft_pb2.ChangedLeader(new_leader_id=str(java_server_address))
+        response = stub.HandoffLeader(request)
+        # print(f"Java server at {java_server_address} responded: {response.status}")
+    except grpc.RpcError as e:
+        print(f"Failed to contact Java server: {e.code()} - {e.details()}")
+
 
 
 def serve(NODE_ID):

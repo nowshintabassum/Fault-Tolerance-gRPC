@@ -10,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class RaftLogReplicationServer {
 
     private static String nodeId;
-    private static List<String> memberNodes = Arrays.asList("50051", "50052", "50053");
+    private static List<String> memberNodes = Arrays.asList("60051", "60052", "60053", "60054","60055");
     private static String state = "follower";  // states: follower, leader
     private static int currentTerm = 0;
     private static int commitIndex = 0;
