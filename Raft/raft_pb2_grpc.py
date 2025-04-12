@@ -44,18 +44,43 @@ class RaftStub(object):
                 request_serializer=raft__pb2.AppendEntriesRequest.SerializeToString,
                 response_deserializer=raft__pb2.AppendEntriesResponse.FromString,
                 _registered_method=True)
+        self.SubmitOperation = channel.unary_unary(
+                '/raft.Raft/SubmitOperation',
+                request_serializer=raft__pb2.OperationRequest.SerializeToString,
+                response_deserializer=raft__pb2.OperationResponse.FromString,
+                _registered_method=True)
+        self.HandoffLeader = channel.unary_unary(
+                '/raft.Raft/HandoffLeader',
+                request_serializer=raft__pb2.ChangedLeader.SerializeToString,
+                response_deserializer=raft__pb2.ChangedLeaderAck.FromString,
+                _registered_method=True)
 
 
 class RaftServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def RequestVote(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """RPC used during leader election
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def AppendEntries(self, request, context):
+        """RPC used both as heartbeat and for log replication
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubmitOperation(self, request, context):
+        """RPC used by clients to submit an operation/command
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def HandoffLeader(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -73,6 +98,16 @@ def add_RaftServicer_to_server(servicer, server):
                     servicer.AppendEntries,
                     request_deserializer=raft__pb2.AppendEntriesRequest.FromString,
                     response_serializer=raft__pb2.AppendEntriesResponse.SerializeToString,
+            ),
+            'SubmitOperation': grpc.unary_unary_rpc_method_handler(
+                    servicer.SubmitOperation,
+                    request_deserializer=raft__pb2.OperationRequest.FromString,
+                    response_serializer=raft__pb2.OperationResponse.SerializeToString,
+            ),
+            'HandoffLeader': grpc.unary_unary_rpc_method_handler(
+                    servicer.HandoffLeader,
+                    request_deserializer=raft__pb2.ChangedLeader.FromString,
+                    response_serializer=raft__pb2.ChangedLeaderAck.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -129,6 +164,60 @@ class Raft(object):
             '/raft.Raft/AppendEntries',
             raft__pb2.AppendEntriesRequest.SerializeToString,
             raft__pb2.AppendEntriesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubmitOperation(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/raft.Raft/SubmitOperation',
+            raft__pb2.OperationRequest.SerializeToString,
+            raft__pb2.OperationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def HandoffLeader(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/raft.Raft/HandoffLeader',
+            raft__pb2.ChangedLeader.SerializeToString,
+            raft__pb2.ChangedLeaderAck.FromString,
             options,
             channel_credentials,
             insecure,
