@@ -1,1 +1,7 @@
 python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. raft.proto
+
+
+java -cp build/libs/Raft-1.0-SNAPSHOT.jar raft.RaftLogReplicationServer 50052
+
+
+java -cp build/libs/Raft-1.0-SNAPSHOT.jar raft.RaftClient 50051
