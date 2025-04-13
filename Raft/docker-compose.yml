@@ -1,0 +1,91 @@
+version: "3.8"
+
+networks:
+  raft-net:
+    driver: bridge
+
+services:
+  # Each node container runs both the Python leader election (on 500XX)
+  # and the Java log replication service (on 600XX).
+  raft-node-1:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: raft-node-1
+    ports:
+      - "50051:50051"
+      - "60051:60051"
+    # Use a command that starts the Java service (via gradlew run) and the Python service concurrently.
+    command: >
+      sh -c "./gradlew run --args='60051' & python3 -u leader_election.py --node_id 50051"
+    networks:
+      - raft-net
+
+  raft-node-2:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: raft-node-2
+    ports:
+      - "50052:50052"
+      - "60052:60052"
+    command: >
+      sh -c "./gradlew run --args='60052' & python3 -u leader_election.py --node_id 50052"
+    networks:
+      - raft-net
+
+  raft-node-3:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: raft-node-3
+    ports:
+      - "50053:50053"
+      - "60053:60053"
+    command: >
+      sh -c "./gradlew run --args='60053' & python3 -u leader_election.py --node_id 50053"
+    networks:
+      - raft-net
+
+  raft-node-4:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: raft-node-4
+    ports:
+      - "50054:50054"
+      - "60054:60054"
+    command: >
+      sh -c "./gradlew run --args='60054' & python3 -u leader_election.py --node_id 50054"
+    networks:
+      - raft-net
+
+  raft-node-5:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: raft-node-5
+    ports:
+      - "50055:50055"
+      - "60055:60055"
+    command: >
+      sh -c "./gradlew run --args='60055' & python3 -u leader_election.py --node_id 50055"
+    networks:
+      - raft-net
+
+  # Java client to submit an operation (with a delay)
+  raft-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: raft-client
+    depends_on:
+      - raft-node-1
+      - raft-node-2
+      - raft-node-3
+      - raft-node-4
+      - raft-node-5
+    command: >
+      sh -c "sleep 30; ./gradlew runClient --args='60051 sample-operation'"
+    networks:
+      - raft-net

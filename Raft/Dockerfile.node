@@ -1,0 +1,20 @@
+# Dockerfile.node
+FROM openjdk:8-jdk
+
+# Install Python 3 and pip (Debian-based)
+RUN apt-get update && apt-get install -y python3 python3-pip && apt-get clean
+
+WORKDIR /app
+
+# Copy the whole project into the container.
+# Adjust the paths if necessary.
+COPY . /app
+
+# Install Python dependencies.
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+# Make sure Gradle wrapper is executable and build the Java project with Shadow.
+RUN chmod +x ./gradlew
+RUN ./gradlew clean build
+
+# Do not set an ENTRYPOINT here; we will supply a command in docker-compose.
