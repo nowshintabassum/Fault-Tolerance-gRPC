@@ -10,33 +10,28 @@ import java.util.concurrent.locks.ReentrantLock;
 public class RaftLogReplicationServer {
 
     private static String nodeId;
-    private static List<String> memberNodes = Arrays.asList("60051", "60052", "60053", "60054","60055");
-    private static String state = "follower";  // states: follower, leader
+    // Java nodes run on ports like 60051, 60052, etc.
+    private static List<String> memberNodes = Arrays.asList("60051", "60052", "60053", "60054", "60055");
+    private static String state = "follower";  // initially, all nodes are followers
     private static int currentTerm = 0;
     private static int commitIndex = 0;
     private static List<LogEntry> log = new ArrayList<>();
     private static ReentrantLock logLock = new ReentrantLock();
-    private static String leaderId = null; // current leader (if this node isn't the leader)
+    private static String leaderId = null; // stores the leader's address (e.g., "localhost:60051")
+    // A heartbeat timer: only running for the leader.
+    private static Timer heartbeatTimer = null;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         if (args.length < 1) {
             System.err.println("Usage: RaftLogReplicationServer <nodeId>");
             System.exit(1);
         }
-        nodeId = args[0];
+        nodeId = args[0]; // Expect a port, e.g., "60051"
         int port = Integer.parseInt(nodeId);
 
-        if (nodeId.equals("50051")) {
-            state = "leader";
-            leaderId = nodeId;
-            System.out.println("For testing: Node " + nodeId + " is explicitly set as the leader.");
-        } else {
-            state = "follower";
-            leaderId = "50051"; // For testing, all followers know that the leader is on port 50051
-            System.out.println("For testing: Node " + nodeId + " is explicitly set as a follower (leader is Node 50051).");
-        }
-
-
+        // All nodes start as followers, and no leader is set initially.
+        state = "follower";
+        leaderId = "";
 
         Server server = ServerBuilder.forPort(port)
                 .addService(new RaftLogReplicationServiceImpl())
@@ -44,25 +39,18 @@ public class RaftLogReplicationServer {
                 .start();
         System.out.println("Node " + nodeId + " started on port " + port + " as " + state);
 
-        // Schedule heartbeat if this node becomes leader
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                if (state.equals("leader")) {
-                    sendHeartbeats();
-                }
-            }
-        }, 0, 1000); // every 1 second
-
+        // Do not start any heartbeat timer here;
+        // if this node becomes leader via HandoffLeader RPC, it will start its own heartbeat timer.
         server.awaitTermination();
     }
 
+    // This service implementation now supports AppendEntries, SubmitOperation, and the new HandoffLeader RPC.
     static class RaftLogReplicationServiceImpl extends RaftGrpc.RaftImplBase {
 
         @Override
         public void appendEntries(AppendEntriesRequest request, StreamObserver<AppendEntriesResponse> responseObserver) {
             System.out.println("Node " + nodeId + " runs RPC AppendEntries called by Leader Node " + request.getLeaderId());
+            System.out.println("Term " + currentTerm);
             if (request.getTerm() >= currentTerm) {
                 currentTerm = request.getTerm();
                 logLock.lock();
@@ -105,7 +93,7 @@ public class RaftLogReplicationServer {
             System.out.println("Node " + nodeId + " runs RPC SubmitOperation called by Client");
             if (!state.equals("leader")) {
                 // Forward request to the leader if this node isn't the leader.
-                if (leaderId != null) {
+                if (!leaderId.isEmpty()) {
                     System.out.println("Node " + nodeId + " forwards RPC SubmitOperation to Leader Node " + leaderId);
                     OperationResponse leaderResponse = ForwardRequest.forward(leaderId, request);
                     responseObserver.onNext(leaderResponse);
@@ -131,12 +119,37 @@ public class RaftLogReplicationServer {
             logLock.unlock();
             System.out.println("Node " + nodeId + " appended log entry: " + newEntry);
 
-            // Immediately respond to the client; the log replication and eventual commit
-            // will be handled during the next heartbeat.
+            // Immediately respond to the client; the log replication and commit
+            // (via heartbeat) will happen subsequently.
             OperationResponse response = OperationResponse.newBuilder()
                     .setResult("Operation appended to log. It will be replicated on the next heartbeat.")
                     .build();
             responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+
+        @Override
+        public void handoffLeader(ChangedLeader request, StreamObserver<ChangedLeaderAck> responseObserver) {
+            System.out.println("Node " + nodeId + " received HandoffLeader RPC with newleader: " + request.getNewleader());
+            // The newleader field is expected to be a string like "localhost:60051"
+            String myAddress = "localhost:" + nodeId;
+            if (request.getNewleader().equals(myAddress)) {
+                // This node is the new leader
+                state = "leader";
+                leaderId = myAddress;
+                currentTerm = request.getTerm();
+                System.out.println("Node " + nodeId + " is now the leader after handoff.");
+                // Start the heartbeat timer
+                startHeartbeatTimer();
+            } else {
+                // Otherwise, this node becomes a follower and updates its known leader.
+                state = "follower";
+                leaderId = request.getNewleader();
+                currentTerm = request.getTerm();
+                System.out.println("Node " + nodeId + " acknowledges leader handoff to " + leaderId);
+            }
+            ChangedLeaderAck ack = ChangedLeaderAck.newBuilder().setAck(true).build();
+            responseObserver.onNext(ack);
             responseObserver.onCompleted();
         }
     }
@@ -146,10 +159,26 @@ public class RaftLogReplicationServer {
         System.out.println("Node " + nodeId + " executed operation: " + entry.getOperation() + " at index: " + entry.getIndex());
     }
 
-    // The leader periodically sends heartbeats (with the entire log and commitIndex) to all followers.
-    // If a majority of followers acknowledge the new log entries, the leader commits and executes them.
+    // Starts a heartbeat timer that sends AppendEntries RPCs every 1 second while this node is the leader.
+    private static void startHeartbeatTimer() {
+        if (heartbeatTimer == null) {
+            heartbeatTimer = new Timer();
+            heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    if (state.equals("leader")) {
+                        sendHeartbeats();
+                    }
+                }
+            }, 0, 1000);
+            System.out.println("Heartbeat timer started on node " + nodeId);
+        }
+    }
+
+    // The leader periodically sends heartbeats (containing the full log and commitIndex) to all followers.
+    // If a majority acknowledges and there are pending uncommitted entries, the leader commits and executes them.
     private static void sendHeartbeats() {
-        int ackCount = 1; // count the leader's own acknowledgment.
+        int ackCount = 1; // Count leader's own acknowledgment.
         for (String member : memberNodes) {
             if (member.equals(nodeId)) continue;
             try {
@@ -160,7 +189,7 @@ public class RaftLogReplicationServer {
                 System.out.println("Node " + nodeId + " sends RPC AppendEntries to " + member);
                 AppendEntriesResponse resp = stub.appendEntries(AppendEntriesRequest.newBuilder()
                         .setTerm(currentTerm)
-                        .setLeaderId(nodeId)
+                        .setLeaderId("localhost:" + nodeId)
                         .addAllLog(log)
                         .setCommitIndex(commitIndex)
                         .build());
@@ -172,7 +201,7 @@ public class RaftLogReplicationServer {
                 System.err.println("Error sending heartbeat to node " + member + ": " + e.getMessage());
             }
         }
-        // If a majority has acknowledged and there are pending log entries (not yet committed), commit them.
+        // If a majority has acknowledged and there are pending log entries, commit them.
         if (ackCount > memberNodes.size() / 2) {
             logLock.lock();
             try {

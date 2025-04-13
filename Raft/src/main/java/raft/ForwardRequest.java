@@ -7,7 +7,8 @@ public class ForwardRequest {
     public static OperationResponse forward(String leaderPort, OperationRequest request) {
         OperationResponse response;
         try {
-            ManagedChannel channel = ManagedChannelBuilder.forTarget("localhost:" + leaderPort)
+            System.out.println("leaderPort: " + leaderPort);
+            ManagedChannel channel = ManagedChannelBuilder.forTarget(leaderPort)
                     .usePlaintext()
                     .build();
             // For logging the forwarding, we use the same format.
@@ -16,6 +17,7 @@ public class ForwardRequest {
             response = stub.submitOperation(request);
             channel.shutdown();
         } catch (Exception e) {
+            System.out.println("Exception: " + e);
             response = OperationResponse.newBuilder().setResult("Error forwarding request to leader.").build();
         }
         return response;

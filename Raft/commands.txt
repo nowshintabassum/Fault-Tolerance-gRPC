@@ -5,3 +5,17 @@ java -cp build/libs/Raft-1.0-SNAPSHOT.jar raft.RaftLogReplicationServer 50052
 
 
 java -cp build/libs/Raft-1.0-SNAPSHOT.jar raft.RaftClient 50051
+
+./gradlew runClient --args="60051 myOperation"
+
+./gradlew run --args="60051"
+./gradlew run --args="60052"
+./gradlew run --args="60053"
+./gradlew run --args="60054"
+./gradlew run --args="60055"
+
+python leader_election.py --node_id 50051
+python leader_election.py --node_id 50052
+python leader_election.py --node_id 50053
+python leader_election.py --node_id 50054
+python leader_election.py --node_id 50055

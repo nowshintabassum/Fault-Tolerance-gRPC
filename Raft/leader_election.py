@@ -7,7 +7,7 @@ import raft_pb2_grpc
 from concurrent import futures
 import os
 import argparse
-time.sleep(3)
+time.sleep(30)
 HEARTBEAT_INTERVAL = 1.0
 ELECTION_TIMEOUT = random.uniform(1.5, 3.0)
 STATE = "follower"
@@ -15,6 +15,7 @@ CURRENT_TERM = 0
 VOTES_RECEIVED = 0
 VOTED_FOR = None
 MEMBER_NODES = ['50051', '50052', '50053','50054','50055']
+HANDED_OFF_LEADER = False
 # , "50054", "50055"]
 LAST_HEARTBEAT = time.time()
 
@@ -44,7 +45,7 @@ class RaftServicer(raft_pb2_grpc.RaftServicer):
         return raft_pb2.VoteResponse(term=CURRENT_TERM, voteGranted=vote_granted)
 
     def AppendEntries(self, request, context):
-        global CURRENT_TERM, STATE, LAST_HEARTBEAT
+        global CURRENT_TERM, STATE, LAST_HEARTBEAT, HANDED_OFF_LEADER
         print(f"Node {self.node_id} runs RPC AppendEntries called by Leader Node {request.leaderId}")
 
         print('Term', request.term)
@@ -52,6 +53,7 @@ class RaftServicer(raft_pb2_grpc.RaftServicer):
             CURRENT_TERM = request.term
             STATE = "follower"
             LAST_HEARTBEAT = time.time()
+            HANDED_OFF_LEADER = False
             return raft_pb2.AppendEntriesResponse(term=CURRENT_TERM, success=True)
         else:
             print('Intiating leader election again')
@@ -78,6 +80,12 @@ def send_request_vote(NODE_ID):
     # time.sleep(5) /
 
 def send_heartbeats(NODE_ID):
+    global HANDED_OFF_LEADER
+    if HANDED_OFF_LEADER == False:
+        handoff_leader(NODE_ID)
+        HANDED_OFF_LEADER = True
+        
+    
     for node in MEMBER_NODES:
         if NODE_ID == node:
             continue
@@ -101,7 +109,7 @@ def run_election(NODE_ID):
     if VOTES_RECEIVED > len(MEMBER_NODES) // 2:
         STATE = "leader"
         print(f"Node {NODE_ID} becomes leader for term {CURRENT_TERM}")
-        handoff_leader(NODE_ID)
+        # handoff_leader(NODE_ID)
         while STATE == "leader":
             send_heartbeats(NODE_ID)
             time.sleep(HEARTBEAT_INTERVAL)
@@ -115,7 +123,7 @@ def election_timer(NODE_ID):
     global STATE, ELECTION_TIMEOUT
     
     while True:
-        time.sleep(0.2)
+        # time.sleep(0.2)
         
         if STATE == "leader" or STATE == "candidate":
             continue
@@ -128,9 +136,10 @@ def handoff_leader(new_leader_id):
         java_server_port = int(new_leader_id) + 10000
         java_server_address = f"localhost:{java_server_port}"
         channel = grpc.insecure_channel(java_server_address)
-        stub = raft_pb2_grpc.RaftServiceStub(channel)
-        request = raft_pb2.ChangedLeader(new_leader_id=str(java_server_address))
+        stub = raft_pb2_grpc.RaftStub(channel)
+        request = raft_pb2.ChangedLeader(newleader=str(java_server_address), term = CURRENT_TERM)
         response = stub.HandoffLeader(request)
+        print(f"Node {new_leader_id} sends RPC HandoffLeader to {java_server_address} on Term {CURRENT_TERM}")
         # print(f"Java server at {java_server_address} responded: {response.status}")
     except grpc.RpcError as e:
         print(f"Failed to contact Java server: {e.code()} - {e.details()}")
