@@ -12,7 +12,7 @@ services:
     #            python3 /app/coordinator.py participant1:50051 participant2:50052 participant3:50053
     #            && wait"
     command: >
-      bash -c "/app/gradlew runCoordinator --args='60060' & sleep 60; python3 /app/coordinator.py participant1:50051 participant2:50052 participant3:50053"
+      bash -c "/app/gradlew runCoordinator --args='60060' & sleep 60; python3 /app/coordinator.py participant1:50051 participant2:50052 participant3:50053 participant4:50054 participant5:50055"
 
     networks:
       - twopc-network
@@ -63,6 +63,38 @@ services:
                /app/gradlew runParticipant --args='60053'"
     networks:
       - twopc-network
+
+  participant4:
+    build:
+      context: .
+      dockerfile: Dockerfile.participant
+    ports:
+      - "50054:50054"
+      - "60054:60054"
+    environment:
+      PARTICIPANT_VOTE_PORT: "50054"
+      PARTICIPANT_DECISION_PORT: "60054"
+    command: >
+      bash -c "python3 /app/participant.py 50054 &
+               /app/gradlew runParticipant --args='60054'"
+    networks:
+      - twopc-network
+
+  # participant5:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.participant
+  #   ports:
+  #     - "50055:50055"
+  #     - "60055:60055"
+  #   environment:
+  #     PARTICIPANT_VOTE_PORT: "50055"
+  #     PARTICIPANT_DECISION_PORT: "60055"
+  #   command: >
+  #     bash -c "python3 /app/participant.py 50055 &
+  #              /app/gradlew runParticipant --args='60055'"
+  #   networks:
+  #     - twopc-network
 
 networks:
   twopc-network:
